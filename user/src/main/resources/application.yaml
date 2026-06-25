@@ -1,0 +1,134 @@
+# ============================================================
+# user-service — base configuration
+# Loaded in every environment. Sensitive values are always
+# supplied via environment variables (${VAR:default}).
+# Environment-specific overrides live in application-{profile}.yml
+# ============================================================
+
+spring:
+  application:
+    name: user-service
+
+  # ── Profiles ──────────────────────────────────────────────
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+
+  # ── DataSource ────────────────────────────────────────────
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:skybusdb}?currentSchema=skybus_user_schema
+    username: ${DB_USER:skybus}
+    password: ${DB_PASS:1234}
+    driver-class-name: org.postgresql.Driver
+
+    hikari:
+      pool-name: UserServicePool
+      maximum-pool-size: ${DB_POOL_MAX:10}
+      minimum-idle: ${DB_POOL_MIN:2}
+      connection-timeout: 30000       # 30 s — fail fast rather than hang
+      idle-timeout: 600000            # 10 min — release idle connections
+      max-lifetime: 1800000           # 30 min — rotate before PostgreSQL kills it
+      connection-test-query: SELECT 1
+      leak-detection-threshold: 60000 # warn if connection held > 60 s
+
+  # ── JPA / Hibernate ───────────────────────────────────────
+  jpa:
+    hibernate:
+      # "validate" — Hibernate checks entity ↔ table match at startup.
+      # Schema changes go through Flyway migrations only, never auto-DDL.
+      ddl-auto: validate
+    show-sql: false
+    open-in-view: false               # prevents lazy-load leaking into HTTP layer
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        default_schema: skybus_user_schema   # all queries prefixed with skybus_user.
+        format_sql: true
+        jdbc:
+          batch_size: 25              # batch inserts for bulk operations
+        order_inserts: true
+        order_updates: true
+        connection:
+          provider_disables_autocommit: true
+
+  # ── Flyway ────────────────────────────────────────────────
+  flyway:
+    enabled: true
+    schemas: skybus_user_schema              # Flyway owns this schema
+    locations: classpath:db/migration
+    baseline-on-migrate: false
+    out-of-order: false               # reject migrations applied out of sequence
+    validate-on-migrate: true         # checksum-validates applied migrations
+
+  # ── Jackson (JSON) ────────────────────────────────────────
+  jackson:
+    default-property-inclusion: non_null   # omit null fields from responses
+    serialization:
+      write-dates-as-timestamps: false     # ISO-8601 strings, not epoch numbers
+      fail-on-empty-beans: false
+    deserialization:
+      fail-on-unknown-properties: false    # tolerate extra fields from clients
+
+# ── Server ────────────────────────────────────────────────
+server:
+  port: ${SERVER_PORT:8081}
+  error:
+    include-message: never            # never leak internal messages to clients
+    include-binding-errors: never
+    include-stacktrace: never
+  compression:
+    enabled: true
+    mime-types: application/json
+    min-response-size: 1024
+
+# ── JWT ───────────────────────────────────────────────────
+jwt:
+  secret: ${JWT_SECRET}               # required — no default; service won't start without it
+  expiry-ms: ${JWT_EXPIRY_MS:900000}  # 15 min access token
+  refresh-expiry-days: ${JWT_REFRESH_DAYS:7}
+
+# ── Actuator ──────────────────────────────────────────────
+management:
+  server:
+    port: ${MANAGEMENT_PORT:8081}     # same port in dev; separate port in prod is safer
+  endpoints:
+    web:
+      base-path: /actuator
+      exposure:
+        include: health,info,metrics,prometheus,flyway
+  endpoint:
+    health:
+      show-details: when-authorized   # full detail only for authenticated calls
+      probes:
+        enabled: true                 # exposes /actuator/health/liveness + /readiness
+    flyway:
+      enabled: true
+  health:
+    livenessState:
+      enabled: true
+    readinessState:
+      enabled: true
+    db:
+      enabled: true
+  metrics:
+    tags:
+      application: ${spring.application.name}
+      environment: ${spring.profiles.active}
+  tracing:
+    sampling:
+      probability: ${TRACING_SAMPLE_RATE:0.1}   # 10% in prod; overridden to 1.0 in dev
+
+# ── Info endpoint ─────────────────────────────────────────
+info:
+  app:
+    name: ${spring.application.name}
+    description: Authentication and user management service
+    version: '@project.version@'      # Maven resource filtering fills this in
+
+# ── Logging (base) ────────────────────────────────────────
+logging:
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] [%X{traceId:-}] %-5level %logger{36} - %msg%n"
+  level:
+    root: WARN
+    com.air.user: INFO
+    org.flywaydb: INFO

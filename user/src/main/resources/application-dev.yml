@@ -1,0 +1,83 @@
+# ============================================================
+# user-service — development profile
+# Activated when SPRING_PROFILES_ACTIVE=dev (the default).
+# Overrides base application.yml with settings optimised for
+# local development: verbose logging, relaxed security, local DB.
+#
+# DO NOT use this profile in production.
+# ============================================================
+
+spring:
+
+  # ── DataSource (local Docker PostgreSQL) ──────────────────
+  datasource:
+    url: jdbc:postgresql://localhost:5432/skybusdb?currentSchema=skybus_user_schema
+    username: skybus
+    password: 1234
+
+    hikari:
+      auto-commit: false
+      maximum-pool-size: 5            # smaller pool — only one dev instance
+      minimum-idle: 1
+      leak-detection-threshold: 30000 # warn faster in dev (30 s)
+
+  # ── JPA ───────────────────────────────────────────────────
+  jpa:
+    show-sql: true                    # print every SQL query to console
+    properties:
+      hibernate:
+        format_sql: true              # pretty-print SQL (multi-line)
+        # Highlights N+1 problems during development
+        generate_statistics: false
+
+  # ── Flyway ────────────────────────────────────────────────
+  flyway:
+    # Clean the schema before migrating — useful for a clean slate.
+    # NEVER enable flyway.clean-on-validation-error in prod.
+#    clean-on-validation-error: false
+    # Show SQL statements Flyway is applying
+    placeholder-replacement: true
+
+# ── Server ────────────────────────────────────────────────
+server:
+  port: 8081
+  error:
+    # In dev, include full error details so you can debug without logs
+    include-message: always
+    include-binding-errors: always
+    include-stacktrace: on-param     # add ?trace=true to see stack trace
+
+# ── JWT ───────────────────────────────────────────────────
+jwt:
+  # Hardcoded dev secret — 32-byte Base64.
+  # Generate your own: openssl rand -base64 32
+  secret: dGhpcy1pcy1hLXN1cGVyLXNlY3JldC1rZXktZm9yLWRldmVsb3BtZW50LW9ubHkh
+  expiry-ms: 86400000               # 24 h in dev — avoids constant re-login
+  refresh-expiry-days: 30           # 30 days in dev — long-lived for convenience
+
+# ── Actuator ──────────────────────────────────────────────
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"                 # expose every endpoint in dev
+  endpoint:
+    health:
+      show-details: always           # always show full health breakdown
+    env:
+      show-values: always            # see resolved config values at /actuator/env
+  tracing:
+    sampling:
+      probability: 1.0               # trace every request in dev
+
+# ── Logging (verbose) ─────────────────────────────────────
+logging:
+  level:
+    root: INFO
+    com.air.user: DEBUG              # full debug for our own code
+    org.springframework.security: DEBUG   # see every security decision
+    org.springframework.web: DEBUG        # see request mapping + handler resolution
+    org.hibernate.SQL: DEBUG              # redundant with show-sql but catches edge cases
+    org.hibernate.orm.jdbc.bind: TRACE    # shows bound parameter values in queries
+    org.flywaydb: DEBUG
+    com.zaxxer.hikari: DEBUG         # connection pool events
