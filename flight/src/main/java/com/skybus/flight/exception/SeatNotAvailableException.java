@@ -1,0 +1,11 @@
+package com.skybus.flight.exception;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.ResponseStatus;
+
+@ResponseStatus(HttpStatus.CONFLICT)
+public class SeatNotAvailableException extends RuntimeException {
+    public SeatNotAvailableException(String seat) {
+        super("Seat already occupied: " + seat);
+    }
+}
