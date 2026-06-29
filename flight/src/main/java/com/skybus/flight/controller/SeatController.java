@@ -17,6 +17,13 @@ public class SeatController {
 
     private final SeatService seatService;
 
+    @GetMapping("/{id}")
+    public ResponseEntity<SeatResponse> getSeat(
+            @PathVariable UUID id
+    ) {
+        return ResponseEntity.ok(seatService.getSeat(id));
+    }
+
     @GetMapping("/flight/{flightId}")
     public ResponseEntity<List<SeatResponse>> getAvailable(
             @PathVariable UUID flightId,
