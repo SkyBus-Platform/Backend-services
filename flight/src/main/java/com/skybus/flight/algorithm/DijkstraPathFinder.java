@@ -2,6 +2,7 @@ package com.skybus.flight.algorithm;
 
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDateTime;
 import java.util.*;
 
 /**
@@ -37,6 +38,7 @@ public class DijkstraPathFinder {
             FlightGraph graph,
             String origin,
             String destination,
+            boolean optimizeByPrice,
             int maxHops) {
 
         if (maxHops <= 0) maxHops = DEFAULT_MAX_HOPS;
@@ -62,32 +64,34 @@ public class DijkstraPathFinder {
             // Prune — too many hops already
             if (current.path.size() >= maxHops) continue;
 
+            List<String> newVisited = new ArrayList<>(current.visited);
+            newVisited.add(current.node);
+
             for (FlightGraph.Edge edge : graph.edgesFrom(current.node)) {
-                if (current.visited.contains(current.node)) continue;
+                if (edge.getArrival() == null) continue;
+                if (newVisited.contains(edge.getTo())) continue;
 
-                if (current.lastArrival != null &&
-                        edge.getDeparture().isBefore(current.lastArrival)) continue;
-
+                double cost = current.cost + edge.getWeight();
                 if (current.lastArrival != null) {
+                    if (edge.getDeparture().isBefore(current.lastArrival)) continue;
                     long minutesBetween = java.time.Duration
                             .between(current.lastArrival, edge.getDeparture())
                             .toMinutes();
                     if (minutesBetween < MIN_LAYOVER_MINUTES) continue;
+                    if (!optimizeByPrice) cost += minutesBetween;
                 }
-
-                List<String> newVisited = new ArrayList<>(current.visited);
-                newVisited.add(current.node);
 
                 List<FlightGraph.Edge> newPath = new ArrayList<>(current.path);
                 newPath.add(edge);
 
                 pq.offer(new State(
-                        current.cost + edge.getWeight(),
+                        cost,
                         newPath,
                         edge.getTo(),
                         edge.getArrival(),
                         newVisited
                 ));
+
             }
         }
 
