@@ -53,6 +53,7 @@ public class RouteService {
                 graph,
                 req.origin().toUpperCase(),
                 req.destination().toUpperCase(),
+                optimizeByPrice,
                 req.maxHops()
         );
 
