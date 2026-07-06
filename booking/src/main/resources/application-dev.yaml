@@ -1,0 +1,54 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/skybusdb?currentSchema=skybus_booking_schema
+    username: skybus
+    password: 1234
+    hikari:
+      maximum-pool-size: 5
+      minimum-idle: 1
+
+  jpa:
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+  rabbitmq:
+    host: localhost
+    port: 5672
+
+  flyway:
+    url: jdbc:postgresql://localhost:5432/skybusdb
+    user: skybus
+    password: 1234
+    schemas: skybus_booking_schema
+    locations: classpath:db/migration
+
+server:
+  port: 8083
+  error:
+    include-message: always
+    include-stacktrace: on-param
+
+services:
+  flight:
+    url: http://localhost:8082
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      flight-service:
+        sliding-window-size: 5
+        failure-rate-threshold: 60
+        wait-duration-in-open-state: 5s   # faster recovery in dev
+
+logging:
+  level:
+    root: INFO
+    com.skybus.booking: DEBUG
+    com.skybus.booking.client: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.springframework.cloud.openfeign: DEBUG
+    org.hibernate.orm.jdbc.bind: TRACE
+    org.flywaydb: DEBUG
+    feign: DEBUG

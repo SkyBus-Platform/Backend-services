@@ -14,6 +14,15 @@ import java.util.UUID;
 @Repository
 public interface SeatRepository extends JpaRepository<Seat, UUID> {
 
+    @Query("""
+        SELECT s
+        FROM Seat s
+        WHERE s.id = :seatId
+    """)
+    Optional<Seat> findSeatById(
+            @Param("seatId") UUID seatId
+    );
+
     /** All available seats for a flight, optionally filtered by class. */
     @Query("""
         SELECT s FROM Seat s

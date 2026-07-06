@@ -23,6 +23,15 @@ public class SeatService {
     private final FlightService  flightService;
 
     @Transactional(readOnly = true)
+    public SeatResponse getSeat(UUID seatId) {
+        Seat seat = seatRepo.findSeatById(seatId)
+                .orElseThrow(() -> new SeatNotAvailableException(seatId.toString()));
+
+        log.info("Seat {} resieved on flight {}", seat.getSeatNumber(), seat.getFlight().getFlightNumber());
+        return SeatResponse.from(seat);
+    }
+
+    @Transactional(readOnly = true)
     public List<SeatResponse> getAvailableSeats(UUID flightId, SeatClass seatClass) {
         return seatRepo.findAvailableSeats(flightId, seatClass)
                 .stream().map(SeatResponse::from).toList();
