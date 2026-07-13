@@ -1,0 +1,33 @@
+spring:
+
+  rabbitmq:
+    host: localhost
+    port: 5672
+
+  mail:
+    host: localhost
+    port: 1025      # Mailhog SMTP port
+    properties:
+      mail:
+        smtp:
+          auth: false
+          starttls:
+            enable: false
+
+  thymeleaf:
+    cache: false    # reload templates on every render in dev
+
+server:
+  port: 8084
+
+notification:
+  mail:
+    from: noreply@skybus.com
+    from-name: SkyBus (Dev)
+
+logging:
+  level:
+    root: INFO
+    com.skybus.notification: DEBUG
+    org.springframework.amqp: DEBUG    # see every message consumed
+    org.thymeleaf: DEBUG               # see template rendering

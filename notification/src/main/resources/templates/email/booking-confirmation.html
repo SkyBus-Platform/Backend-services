@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Booking Confirmation</title>
+    <style>
+        body { margin:0; padding:0; background:#f4f6f9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; }
+        .wrapper { max-width:600px; margin:32px auto; background:#ffffff; border-radius:12px; overflow:hidden; box-shadow:0 2px 12px rgba(0,0,0,0.08); }
+        .header { background:#1a56db; padding:32px 40px; text-align:center; }
+        .header h1 { color:#ffffff; margin:0; font-size:24px; font-weight:600; letter-spacing:-0.3px; }
+        .header p { color:#bfdbfe; margin:6px 0 0; font-size:14px; }
+        .body { padding:36px 40px; }
+        .greeting { font-size:16px; color:#111827; margin:0 0 24px; }
+        .ref-box { background:#eff6ff; border:1px solid #bfdbfe; border-radius:8px; padding:16px 20px; margin:0 0 28px; text-align:center; }
+        .ref-box .label { font-size:12px; color:#6b7280; text-transform:uppercase; letter-spacing:0.5px; margin:0 0 4px; }
+        .ref-box .ref { font-size:28px; font-weight:700; color:#1a56db; letter-spacing:4px; margin:0; }
+        .section-title { font-size:13px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:0.5px; margin:0 0 12px; }
+        .segment { border:1px solid #e5e7eb; border-radius:8px; padding:16px 20px; margin:0 0 12px; }
+        .segment-header { display:flex; justify-content:space-between; align-items:center; margin:0 0 12px; }
+        .hop-badge { background:#1a56db; color:#fff; font-size:10px; font-weight:600; padding:3px 10px; border-radius:20px; }
+        .flight-num { font-size:13px; font-weight:600; color:#374151; }
+        .route-row { display:flex; align-items:center; gap:12px; margin:0 0 10px; }
+        .city { font-size:16px; font-weight:700; color:#111827; }
+        .iata { font-size:12px; color:#6b7280; margin-top:2px; }
+        .arrow { flex:1; height:1px; background:#d1d5db; position:relative; }
+        .arrow::after { content:'›'; position:absolute; right:-4px; top:-9px; color:#9ca3af; font-size:16px; }
+        .time-row { display:flex; justify-content:space-between; font-size:12px; color:#6b7280; }
+        .seat-badge { display:inline-block; background:#f3f4f6; border:1px solid #e5e7eb; border-radius:6px; padding:4px 10px; font-size:12px; font-weight:500; color:#374151; margin-top:8px; }
+        .total-box { background:#f9fafb; border-top:1px solid #e5e7eb; border-radius:0 0 8px 8px; padding:16px 20px; display:flex; justify-content:space-between; align-items:center; margin-top:8px; }
+        .total-label { font-size:13px; color:#6b7280; }
+        .total-amount { font-size:18px; font-weight:700; color:#111827; }
+        .footer { background:#f9fafb; border-top:1px solid #f3f4f6; padding:24px 40px; text-align:center; }
+        .footer p { font-size:12px; color:#9ca3af; margin:0; line-height:1.6; }
+        .footer a { color:#1a56db; text-decoration:none; }
+    </style>
+</head>
+<body>
+<div class="wrapper">
+
+    <!-- Header -->
+    <div class="header">
+        <h1>✈ Booking Confirmed</h1>
+        <p>Your flight has been reserved successfully</p>
+    </div>
+
+    <!-- Body -->
+    <div class="body">
+        <p class="greeting">Hi <strong th:text="${passengerName}">Passenger</strong>,</p>
+        <p style="font-size:14px;color:#374151;margin:0 0 24px;">
+            Your SkyBus booking is confirmed. Here are your travel details.
+        </p>
+
+        <!-- Booking reference -->
+        <div class="ref-box">
+            <p class="label">Booking Reference</p>
+            <p class="ref" th:text="${bookingRef}">AB1C2D</p>
+        </div>
+
+        <!-- Flight segments -->
+        <p class="section-title">Your Itinerary</p>
+
+        <div th:each="seg : ${segments}" class="segment">
+            <div class="segment-header">
+                <span class="hop-badge" th:text="'Hop ' + ${seg.hopOrder}">Hop 1</span>
+                <span class="flight-num" th:text="${seg.airlineCode} + ' ' + ${seg.flightNumber}">UL 101</span>
+            </div>
+
+            <div class="route-row">
+                <div>
+                    <div class="city" th:text="${seg.originCode}">CMB</div>
+                    <div class="iata" th:text="${seg.originCity}">Colombo</div>
+                </div>
+                <div class="arrow"></div>
+                <div style="text-align:right">
+                    <div class="city" th:text="${seg.destinationCode}">DXB</div>
+                    <div class="iata" th:text="${seg.destinationCity}">Dubai</div>
+                </div>
+            </div>
+
+            <div class="time-row">
+                <span th:text="${#temporals.format(seg.departureTime, 'dd MMM yyyy, HH:mm')}">15 Jul 2026, 08:00</span>
+                <span th:text="${#temporals.format(seg.arrivalTime, 'dd MMM yyyy, HH:mm')}">15 Jul 2026, 11:00</span>
+            </div>
+
+            <div>
+        <span class="seat-badge">
+          Seat <strong th:text="${seg.seatNumber}">12A</strong>
+          &nbsp;·&nbsp;
+          <span th:text="${seg.seatClass}">ECONOMY</span>
+        </span>
+            </div>
+        </div>
+
+        <!-- Total -->
+        <div class="total-box">
+            <span class="total-label">Total Paid</span>
+            <span class="total-amount" th:text="${totalAmount}">USD 700.00</span>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        <p>
+            Booked on <span th:text="${createdAt}">01 Jul 2026, 12:00</span><br/>
+            Questions? Contact <a href="mailto:support@skybus.com">support@skybus.com</a>
+        </p>
+        <p style="margin-top:8px;">© 2026 SkyBus. All rights reserved.</p>
+    </div>
+
+</div>
+</body>
+</html>
